@@ -1,0 +1,19 @@
+﻿services:
+  healthywallet.web.api:
+    image: healthywallet.web.api
+    build:
+      context: .
+      dockerfile: HealthyWallet.Web.Api/Dockerfile
+
+  healthywallet.web.api-1:
+    image: healthywallet.web.api-1
+    build:
+      context: .
+      dockerfile: HealthyWallet.Web.Api/Dockerfile
+
+  healthywallet.application:
+    image: healthywallet.application
+    build:
+      context: .
+      dockerfile: HealthyWallet.Application/Dockerfile
+
