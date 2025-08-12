@@ -2,6 +2,7 @@ using System.Net;
 using HealthyWallet.Domain.Models;
 using HealthyWallet.Infrastructure.CrossCutting.Exceptions;
 using HealthyWallet.Infrastructure.CrossCutting.Extensions;
+using HealthyWallet.Infrastructure.CrossCutting.Extensions.Enum;
 using HealthyWallet.Infrastructure.CrossCutting.Helpers;
 using Microsoft.AspNetCore.Http;
 using JSON = NetJSON.NetJSON;
@@ -44,7 +45,7 @@ public class GlobalExceptionMiddleware : IMiddleware
         ));
 
         context.Response.StatusCode = code;
-        context.Response.ContentType = ContentType.Json;
+        context.Response.ContentType = ContentTypes.Json;
         
         await context.Response.WriteAsync(json);
     }

@@ -4,6 +4,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using HealthyWallet.Application.Interfaces;
+using HealthyWallet.Application.Interfaces.Authentication;
+using HealthyWallet.Application.Services;
+using HealthyWallet.Application.Services.Authentication;
+using HealthyWallet.Domain.Interfaces.Authentication;
+using HealthyWallet.Domain.Services.Authentication;
 
 namespace HealthyWallet.Infrastructure.CrossCutting;
 
@@ -11,11 +17,15 @@ public static class HealthyWalletConfiguration
 {
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
+        services.AddTransient<IApplicationAuthenticationService, ApplicationAuthenticationService>();
+
         return services;
     }
 
     public static IServiceCollection AddDomainServices(this IServiceCollection services)
     {
+        services.AddTransient<IDomainAuthenticationService, DomainAuthenticationService>();
+        
         return services;
     }
 
@@ -23,7 +33,7 @@ public static class HealthyWalletConfiguration
     {
         return services;
     }
-    
+
     /// <summary>
     /// Registers the application's <see cref="DbContext"/> into the dependency injection container,
     /// based on the configuration provided.
@@ -43,14 +53,14 @@ public static class HealthyWalletConfiguration
 
             string connectorKey = usePostgres ? "Postgres" : "SqlServer";
             string? connectionString = configuration.GetConnectionString(connectorKey);
-            
+
             if (string.IsNullOrEmpty(connectionString))
             {
                 throw new InvalidOperationException(
-                    $"Missing connection string for '{connectorKey}'"
+                    $"Missing connection string for '{connectorKey}' key"
                 );
             }
-            
+
             if (usePostgres) options.UseNpgsql(connectionString);
             else options.UseSqlServer(connectionString);
 

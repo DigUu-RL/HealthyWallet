@@ -1,11 +1,12 @@
 using HealthyWallet.Infrastructure.Data.Entities.Identity;
+using HealthyWallet.Infrastructure.Data.Enums;
 
 namespace HealthyWallet.Infrastructure.Data.Entities.Account;
 
 public class Card : EntityBase
 {
     public required string Name { get; set; } 
-    public required string Brand { get; set; }
+    public required CardBrand Brand { get; set; }
     public required decimal Limit { get; set; }
     public required int DueDay { get; set; }
     public required int ClosingDay { get; set; }

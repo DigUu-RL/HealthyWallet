@@ -1,4 +1,5 @@
 using HealthyWallet.Infrastructure.CrossCutting;
+using HealthyWallet.Infrastructure.CrossCutting.Conventions;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
@@ -9,7 +10,7 @@ builder.Services.AddDomainServices();
 builder.Services.AddRepositories();
 builder.Services.AddDbContexts(configuration);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options => options.Conventions.Add(new RoutePrefixConvention("api")));
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication();
 builder.Services.AddCors();

@@ -6,7 +6,7 @@ public class UserClaim : EntityBase
 {
     public string Type { get; set; }
     public string Value { get; set; }
-    
+
     // * relationships
     public long UserId { get; set; }
     public User? User { get; set; }
@@ -18,9 +18,8 @@ public class UserClaim : EntityBase
 
         Type = type;
         Value = value;
-        
-        InitRequiredFields();
     }
 
     public static implicit operator Claim(UserClaim claim) => new(claim.Type, claim.Value);
+    public static implicit operator UserClaim(Claim claim) => new(claim.Type, claim.Value);
 }

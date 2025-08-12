@@ -1,11 +1,11 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-namespace HealthyWallet.Infrastructure.CrossCutting.Extensions;
+namespace HealthyWallet.Infrastructure.CrossCutting.Extensions.Enum;
 
 public static partial class EnumExtensions
 {
-    public static string ToCapitalizedString(this Enum @enum)
+    public static string ToCapitalizedString(this System.Enum @enum)
     {
         string input = @enum.ToString();
         string spaced = UpperLetterRegex().Replace(input, " $1");

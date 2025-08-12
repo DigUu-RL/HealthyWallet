@@ -6,4 +6,8 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\Data\HealthyWallet.Infrastructure.Data\HealthyWallet.Infrastructure.Data.csproj" />
+    </ItemGroup>
+
 </Project>

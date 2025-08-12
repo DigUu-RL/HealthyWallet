@@ -11,7 +11,7 @@ public class User : EntityBase, IIdentity
     public required string UserName { get; set; }
     public required string Email { get; set; }
     public required string PasswordHash { get; set; }
-    public required UserType Type { get; set; }
+    public required UserType Type { get; set; } 
 
     [NotMapped] public string AuthenticationType => "HealthyWalletJwtAuthentication";
     [NotMapped] public bool IsAuthenticated { get; set; }
