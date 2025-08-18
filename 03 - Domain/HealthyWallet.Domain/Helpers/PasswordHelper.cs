@@ -1,6 +1,6 @@
 using Hasher = BCrypt.Net.BCrypt;
 
-namespace HealthyWallet.Infrastructure.CrossCutting.Helpers;
+namespace HealthyWallet.Domain.Helpers;
 
 /// <summary>
 /// Provides helper methods for hashing and verifying passwords using the BCrypt algorithm.
@@ -17,8 +17,9 @@ public static class PasswordHelper
     /// <exception cref="ArgumentNullException">Thrown if the password is null or whitespace.</exception>
     public static string Hash(string password)
     {
-        if (string.IsNullOrWhiteSpace(password)) throw new ArgumentNullException(nameof(password));
-        return Hasher.HashPassword(password, WorkFactor);
+        return string.IsNullOrWhiteSpace(password)
+            ? throw new ArgumentNullException(nameof(password))
+            : Hasher.HashPassword(password, WorkFactor);
     }
 
     /// <summary>

@@ -1,6 +1,5 @@
 using Asp.Versioning;
 using HealthyWallet.Application.DTOs;
-using HealthyWallet.Application.Interfaces;
 using HealthyWallet.Application.Interfaces.Authentication;
 using HealthyWallet.Domain.Requests.Authentication;
 using Microsoft.AspNetCore.Authorization;

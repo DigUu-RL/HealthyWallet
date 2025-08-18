@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace HealthyWallet.Infrastructure.CrossCutting.Exceptions;
+namespace HealthyWallet.Domain.Exceptions;
 
 public abstract class HealthyWalletException : Exception
 {

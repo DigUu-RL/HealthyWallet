@@ -1,7 +1,6 @@
 using System.Net;
+using HealthyWallet.Domain.Exceptions;
 using HealthyWallet.Domain.Models;
-using HealthyWallet.Infrastructure.CrossCutting.Exceptions;
-using HealthyWallet.Infrastructure.CrossCutting.Extensions;
 using HealthyWallet.Infrastructure.CrossCutting.Extensions.Enum;
 using HealthyWallet.Infrastructure.CrossCutting.Helpers;
 using Microsoft.AspNetCore.Http;

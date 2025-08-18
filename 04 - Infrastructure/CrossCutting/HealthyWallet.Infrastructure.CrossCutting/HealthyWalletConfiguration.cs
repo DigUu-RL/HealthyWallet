@@ -1,36 +1,77 @@
+using System.Text;
 using HealthyWallet.Infrastructure.CrossCutting.Middlewares;
 using HealthyWallet.Infrastructure.Data.Contexts;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using HealthyWallet.Application.Interfaces;
 using HealthyWallet.Application.Interfaces.Authentication;
-using HealthyWallet.Application.Services;
 using HealthyWallet.Application.Services.Authentication;
 using HealthyWallet.Domain.Interfaces.Authentication;
 using HealthyWallet.Domain.Services.Authentication;
+using HealthyWallet.Infrastructure.Repository.Interfaces;
+using HealthyWallet.Infrastructure.Repository.Repositories;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Tokens;
 
 namespace HealthyWallet.Infrastructure.CrossCutting;
 
+/// <summary>
+/// Provides extension methods for configuring HealthyWallet application services,
+/// domain services, repositories, database contexts, singletons, and middlewares.
+/// </summary>
 public static class HealthyWalletConfiguration
 {
+    /// <summary>
+    /// Registers application-level services into the dependency injection container.
+    /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> to register the services into.</param>
+    /// <returns>The updated <see cref="IServiceCollection"/> with the application services registered.</returns>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
-        services.AddTransient<IApplicationAuthenticationService, ApplicationAuthenticationService>();
+        services.AddScoped<IApplicationAuthenticationService, ApplicationAuthenticationService>();
 
         return services;
     }
 
+    /// <summary>
+    /// Registers domain-level services into the dependency injection container.
+    /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> to register the services into.</param>
+    /// <returns>The updated <see cref="IServiceCollection"/> with the domain services registered.</returns>
     public static IServiceCollection AddDomainServices(this IServiceCollection services)
     {
-        services.AddTransient<IDomainAuthenticationService, DomainAuthenticationService>();
-        
+        services.AddScoped<IDomainAuthenticationService, DomainAuthenticationService>();
+        services.AddScoped<IDomainJwtService, DomainJwtService>();
+
         return services;
     }
 
+    /// <summary>
+    /// Registers repository implementations into the dependency injection container.
+    /// Includes generic base repositories and dynamically scans for additional repository implementations.
+    /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> to register the repositories into.</param>
+    /// <returns>The updated <see cref="IServiceCollection"/> with the repositories registered.</returns>
     public static IServiceCollection AddRepositories(this IServiceCollection services)
     {
+        services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
+        services.AddScoped(typeof(IReadOnlyRepository<>), typeof(BaseRepository<>));
+
+        services.Scan(selector => selector
+            .FromAssembliesOf(typeof(IBaseRepository<>))
+            .AddClasses(filter =>
+                filter.AssignableTo(typeof(IBaseRepository<>)).Where(type => type is
+                {
+                    IsAbstract: false,
+                    IsGenericTypeDefinition: false
+                })
+            )
+            .AsImplementedInterfaces()
+            .WithScopedLifetime()
+        );
+
         return services;
     }
 
@@ -71,6 +112,52 @@ public static class HealthyWalletConfiguration
     }
 
     /// <summary>
+    /// Registers singleton dependencies required by the application, including JWT token validation parameters.
+    /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> to register the singletons into.</param>
+    /// <param name="configuration">The application configuration used to retrieve dependency settings.</param>
+    /// <returns>The updated <see cref="IServiceCollection"/> with the singleton dependencies registered.</returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if required JWT settings (Issuer, Audience, or SecretKey) are missing from configuration.
+    /// </exception>
+    public static IServiceCollection AddSingletonDependencies(this IServiceCollection services, IConfiguration configuration)
+    {
+        IConfigurationSection jwtSection = configuration.GetSection("Jwt");
+        
+        string issuer = jwtSection.GetValue<string>("Issuer") ?? throw new InvalidOperationException("Issuer not found");
+        string audience = jwtSection.GetValue<string>("Audience") ?? throw new InvalidOperationException("Audience not found");
+        string secretKey = jwtSection.GetValue<string>("SecretKey") ?? throw new InvalidOperationException("Secret key not found");
+
+        services.AddSingleton(new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = issuer,
+            ValidAudience = audience,
+            ClockSkew = TimeSpan.Zero,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+        });
+        
+        return services;
+    }
+
+    /// <summary>
+    /// Registers custom middlewares into the dependency injection container for use in the application's request pipeline.
+    /// </summary>
+    /// <param name="services">The <see cref="IServiceCollection"/> to register the middlewares into.</param>
+    /// <returns>The updated <see cref="IServiceCollection"/> with the middlewares registered.</returns>
+    public static IServiceCollection AddMiddlewares(this IServiceCollection services)
+    {
+        services.AddTransient<GlobalExceptionMiddleware>();
+        services.AddTransient<JwtMiddleware>();
+        services.AddTransient<DbTransactionMiddleware>();
+        
+        return services;
+    }
+
+    /// <summary>
     /// Adds custom middlewares to the application's request pipeline, including
     /// global exception handling and database transaction handling.
     /// </summary>
@@ -79,6 +166,12 @@ public static class HealthyWalletConfiguration
     public static IApplicationBuilder UseMiddlewares(this IApplicationBuilder app)
     {
         app.UseMiddleware<GlobalExceptionMiddleware>();
+        
+        app.UseWhen(
+            context => !(context.GetEndpoint()?.Metadata.OfType<AllowAnonymousAttribute>().Any() ?? false),
+            builder => builder.UseMiddleware<JwtMiddleware>()
+        );
+        
         app.UseMiddleware<DbTransactionMiddleware>();
 
         return app;

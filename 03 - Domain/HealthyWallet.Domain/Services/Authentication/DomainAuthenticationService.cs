@@ -1,26 +1,40 @@
-using System.IdentityModel.Tokens.Jwt;
+using HealthyWallet.Domain.Exceptions.Abstractions;
+using HealthyWallet.Domain.Exceptions.Abstractions.Authentication;
+using HealthyWallet.Domain.Helpers;
 using HealthyWallet.Domain.Interfaces.Authentication;
 using HealthyWallet.Domain.Models.Authentication;
 using HealthyWallet.Domain.Requests.Authentication;
-using HealthyWallet.Infrastructure.Repository.Interfaces.Identity;
-using Microsoft.Extensions.Configuration;
+using HealthyWallet.Infrastructure.Data.Entities.Identity;
+using HealthyWallet.Infrastructure.Repository.DesignPattern.Specification.Contracts.Identity;
+using HealthyWallet.Infrastructure.Repository.Interfaces;
 
 namespace HealthyWallet.Domain.Services.Authentication;
 
 public class DomainAuthenticationService(
-    IConfiguration _configuration, 
-    IUserRepository userRepository
+    IDomainJwtService jwtService,
+    IReadOnlyRepository<User> userRepository
 ) : IDomainAuthenticationService
 {
-    private readonly JwtSecurityTokenHandler _tokenHandler = new();
-    
-    public Task<AccessTokenModel> SignIn(SignInRequest model)
+    public async Task<AccessTokenModel> SignIn(SignInRequest model)
     {
-        throw new NotImplementedException();
+        User? user = await userRepository.GetByAsync(
+            UserSpecification.ByEmail(model.Username) ||
+            UserSpecification.ByUserName(model.Username)
+        );
+
+        if (user is null) throw new NotFoundException("User not found");
+        if (!PasswordHelper.Verify(model.Password, user.PasswordHash)) throw new InvalidCredentialsException("Password not matches");
+
+        AccessTokenModel token = jwtService.GenerateToken(user);
+        return token;
     }
 
-    public Task ValidateToken(string type, string token)
+    public async Task<User> ValidateToken(string type, string token)
     {
-        throw new NotImplementedException();
+        if (!type.Equals("Bearer", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidTokenException("Invalid token type");
+
+        User user = await jwtService.ValidateToken(token);
+        return user;
     }
 }

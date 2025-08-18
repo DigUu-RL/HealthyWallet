@@ -1,5 +1,5 @@
 using System.Net;
 
-namespace HealthyWallet.Infrastructure.CrossCutting.Exceptions.Abstractions;
+namespace HealthyWallet.Domain.Exceptions.Abstractions;
 
 public class NotFoundException(string message) : HealthyWalletException(message, HttpStatusCode.NotFound);
