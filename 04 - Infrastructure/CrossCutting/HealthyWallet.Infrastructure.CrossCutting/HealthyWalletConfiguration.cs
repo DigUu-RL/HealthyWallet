@@ -14,6 +14,7 @@ using HealthyWallet.Infrastructure.Repository.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 
 namespace HealthyWallet.Infrastructure.CrossCutting;
 
@@ -92,13 +93,13 @@ public static class HealthyWalletConfiguration
         {
             bool usePostgres = configuration.GetSection("Databases").GetValue<bool>("UsePostgres");
 
-            string connectorKey = usePostgres ? "Postgres" : "SqlServer";
-            string? connectionString = configuration.GetConnectionString(connectorKey);
+            string connectionKey = usePostgres ? "Postgres" : "SqlServer";
+            string? connectionString = configuration.GetConnectionString(connectionKey);
 
             if (string.IsNullOrEmpty(connectionString))
             {
                 throw new InvalidOperationException(
-                    $"Missing connection string for '{connectorKey}' key"
+                    $"Missing connection string for '{connectionKey}' key"
                 );
             }
 
@@ -106,6 +107,23 @@ public static class HealthyWalletConfiguration
             else options.UseSqlServer(connectionString);
 
             options.UseLazyLoadingProxies(false);
+        });
+        
+        services.AddSingleton<IConnectionMultiplexer>(_ =>
+        {
+            const string connectionKey = nameof(StackExchange.Redis);
+            
+            string connectionString = configuration.GetConnectionString(connectionKey) ?? throw new InvalidOperationException(
+                $"Missing connection string for '{connectionKey}' key"
+            );
+
+            return ConnectionMultiplexer.Connect(connectionString);
+        });
+        
+        services.AddScoped<IDatabase>(provider =>
+        {
+            IConnectionMultiplexer multiplexer = provider.GetRequiredService<IConnectionMultiplexer>();
+            return multiplexer.GetDatabase();
         });
 
         return services;

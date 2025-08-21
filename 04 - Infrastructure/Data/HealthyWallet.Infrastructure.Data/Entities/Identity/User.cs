@@ -13,7 +13,7 @@ public class User : EntityBase, IIdentity
     public required string PasswordHash { get; set; }
     public required UserType Type { get; set; } 
 
-    [NotMapped] public string AuthenticationType => "HealthyWalletJwtAuthentication";
+    [NotMapped] public string? AuthenticationType { get; set; }
     [NotMapped] public bool IsAuthenticated { get; set; }
 
     // * relationships

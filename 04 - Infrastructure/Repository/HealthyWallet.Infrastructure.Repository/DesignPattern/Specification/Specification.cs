@@ -15,5 +15,5 @@ public abstract class Specification<T>
     public static Specification<T> operator !(Specification<T> specification) => new NotSpecification<T>(specification);
 
     public static bool operator false(Specification<T> _) => false;
-    public static bool operator true(Specification<T> _) => true;
+    public static bool operator true(Specification<T> _) => false;
 }

@@ -7,22 +7,22 @@ public static class Json
 {
     private static readonly NetJSONSettings DefaultSettings = NetJSONSettings.CurrentSettings;
     
-    public static string SerializeObject(object value)
+    public static string Serialize(object value)
     {
         return JSON.SerializeObject(value, DefaultSettings);
     }
     
-    public static string SerializeObject(object value, NetJSONSettings settings)
+    public static string Serialize(object value, NetJSONSettings settings)
     {
         return JSON.SerializeObject(value, settings);
     }
 
-    public static TResult DeserializeObject<TResult>(string json)
+    public static TResult Deserialize<TResult>(string json)
     {
         return JSON.Deserialize<TResult>(json, DefaultSettings);
     }
     
-    public static TResult DeserializeObject<TResult>(string json, NetJSONSettings settings)
+    public static TResult Deserialize<TResult>(string json, NetJSONSettings settings)
     {
         return JSON.Deserialize<TResult>(json, settings);
     }

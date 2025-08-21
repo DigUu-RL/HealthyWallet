@@ -10,13 +10,20 @@ using HealthyWallet.Infrastructure.Repository.Interfaces;
 
 namespace HealthyWallet.Domain.Services.Authentication;
 
+/// <summary>
+/// Implementation of <see cref="IDomainAuthenticationService"/> that manages
+/// user authentication, token validation, and refresh token handling.
+/// </summary>
 public class DomainAuthenticationService(
     IDomainJwtService jwtService,
     IReadOnlyRepository<User> userRepository
 ) : IDomainAuthenticationService
 {
-    public async Task<AccessTokenModel> SignIn(SignInRequest model)
+    /// <inheritdoc cref="IDomainAuthenticationService.SignInAsync"/>
+    public async Task<AccessTokenModel> SignInAsync(SignInRequest model)
     {
+        userRepository.With(user => user.Claims);
+        
         User? user = await userRepository.GetByAsync(
             UserSpecification.ByEmail(model.Username) ||
             UserSpecification.ByUserName(model.Username)
@@ -29,12 +36,34 @@ public class DomainAuthenticationService(
         return token;
     }
 
-    public async Task<User> ValidateToken(string type, string token)
+    /// <inheritdoc cref="IDomainAuthenticationService.ValidateTokenAsync"/>
+    public async Task<User> ValidateTokenAsync(string type, string token)
     {
         if (!type.Equals("Bearer", StringComparison.OrdinalIgnoreCase))
             throw new InvalidTokenException("Invalid token type");
 
-        User user = await jwtService.ValidateToken(token);
+        User user = await jwtService.ValidateTokenAsync(token);
         return user;
+    }
+
+    /// <inheritdoc cref="IDomainAuthenticationService.CreateRefreshTokenAsync"/>
+    public async Task CreateRefreshTokenAsync(RefreshTokenRequest request)
+    {
+        var refreshToken = new RefreshTokenModel(
+            Guid.CreateVersion7(),
+            request.UserReferenceId,
+            request.ExpiresIn
+        );
+
+        await jwtService.StoreRefreshTokenAsync(refreshToken);
+    }
+
+    /// <inheritdoc cref="IDomainAuthenticationService.GetRefreshTokenAsync"/>
+    public async Task<RefreshTokenModel> GetRefreshTokenAsync(Guid userReferenceId)
+    {
+        RefreshTokenModel refreshToken = await jwtService.GetRefreshTokenAsync(userReferenceId) ??
+                                         throw new InvalidCredentialsException("Refresh token not found");
+
+        return refreshToken;
     }
 }

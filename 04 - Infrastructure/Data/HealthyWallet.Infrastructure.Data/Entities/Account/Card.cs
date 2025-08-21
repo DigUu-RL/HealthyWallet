@@ -1,5 +1,6 @@
 using HealthyWallet.Infrastructure.Data.Entities.Identity;
 using HealthyWallet.Infrastructure.Data.Enums;
+using HealthyWallet.Infrastructure.Data.Enums.Account;
 
 namespace HealthyWallet.Infrastructure.Data.Entities.Account;
 

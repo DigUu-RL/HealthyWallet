@@ -1,6 +1,5 @@
 using System.Net;
 using HealthyWallet.Domain.Models;
-using HealthyWallet.Infrastructure.CrossCutting.Extensions;
 using HealthyWallet.Infrastructure.CrossCutting.Extensions.Enum;
 using HealthyWallet.Infrastructure.Data.Entities.Identity;
 using Microsoft.AspNetCore.Authorization;
@@ -15,8 +14,9 @@ public class AuthorizeAttribute : Attribute, IAuthorizationFilter
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         bool isAnonymous = context.ActionDescriptor.EndpointMetadata.OfType<AllowAnonymousAttribute>().Any();
+        
         if (isAnonymous) return;
-
+        if (context.HttpContext.User.Identity?.IsAuthenticated ?? false) return;
         if (context.HttpContext.Items[nameof(User)] is User) return;
         
         const HttpStatusCode code = HttpStatusCode.Unauthorized;

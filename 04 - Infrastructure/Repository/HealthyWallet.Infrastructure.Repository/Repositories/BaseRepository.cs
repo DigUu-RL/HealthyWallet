@@ -31,20 +31,35 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 
     public async Task<TEntity?> GetByIdAsync(int id) => await _query.SingleOrDefaultAsync(entity => entity.Id == id);
     public async Task<TEntity?> GetByReferenceIdAsync(Guid referenceId) => await _query.SingleOrDefaultAsync(entity => entity.ReferenceId == referenceId);
-    public async Task<TEntity?> GetByAsync(Specification<TEntity> specification) => await  _query.SingleOrDefaultAsync(specification);
+    public async Task<TEntity?> GetByAsync(Specification<TEntity> specification) => await _query.SingleOrDefaultAsync(specification);
     public async Task CreateAsync(params TEntity[] entities) => await _set.AddRangeAsync(entities);
     public async Task CreateAsync(IEnumerable<TEntity> entities) => await _set.AddRangeAsync(entities);
 
-    public async Task UpdateAsync(params TEntity[] entities)
+    public Task UpdateAsync(params TEntity[] entities)
     {
-        foreach (TEntity entity in entities) entity.UpdatedAt = DateTime.UtcNow;
-        await _set.AddRangeAsync(entities);
+        foreach (TEntity entity in entities) entity.UpdateTimestamp();
+        _set.UpdateRange(entities);
+
+        return Task.CompletedTask;
     }
 
     public async Task UpdateAsync(IEnumerable<TEntity> entities)
     {
         TEntity[] array = entities as TEntity[] ?? entities.ToArray();
         await UpdateAsync(array);
+    }
+
+    public async Task CreateOrUpdateAsync(params TEntity[] entities) => await CreateOrUpdateAsync(entities.AsEnumerable());
+
+    public async Task CreateOrUpdateAsync(IEnumerable<TEntity> entities)
+    {
+        TEntity[] array = entities as TEntity[] ?? entities.ToArray();
+        
+        IEnumerable<TEntity> toCreate = array.Where(entity => entity.Id <= 0);
+        IEnumerable<TEntity> toUpdate = array.Where(entity => entity.Id > 0);
+
+        await CreateAsync(toCreate);
+        await UpdateAsync(toUpdate);
     }
 
     public Task DeleteAsync(params TEntity[] entities)

@@ -1,4 +1,6 @@
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using HealthyWallet.Infrastructure.CrossCutting;
 using HealthyWallet.Infrastructure.CrossCutting.Conventions;
 using Microsoft.OpenApi.Models;
@@ -6,7 +8,6 @@ using Microsoft.OpenApi.Models;
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 ConfigurationManager configuration = builder.Configuration;
 
-// Serviços da aplicação
 builder.Services.AddApplicationServices();
 builder.Services.AddDomainServices();
 builder.Services.AddRepositories();
@@ -16,9 +17,19 @@ builder.Services.AddMiddlewares();
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddControllers(options => 
-    options.Conventions.Add(new RoutePrefixConvention("api"))
-);
+builder.Services.AddControllers(options => options.Conventions.Add(new RoutePrefixConvention("api")))
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DictionaryKeyPolicy = JsonNamingPolicy.CamelCase;
+
+        var converters = new List<JsonConverter>
+        {
+            new JsonStringEnumConverter(JsonNamingPolicy.CamelCase, false)
+        };
+        
+        converters.ForEach(converter => options.JsonSerializerOptions.Converters.Add(converter));
+    });
 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
@@ -28,14 +39,14 @@ builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "HealthyWallet API",
+        Title = "Healthy Wallet API",
         Version = "v1",
-        Description = "API da HealthyWallet com autenticação JWT."
+        Description = "Healthy Wallet API with JWT Authentication."
     });
     
-    string xmlName = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    string xmlPath = Path.Combine(AppContext.BaseDirectory, xmlName);
-    if (File.Exists(xmlPath)) options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+    string xml = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    string path = Path.Combine(AppContext.BaseDirectory, xml);
+    if (File.Exists(path)) options.IncludeXmlComments(path, includeControllerXmlComments: true);
     
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -44,7 +55,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Insira o token JWT no formato: **Bearer {seu_token}**"
+        Description = "Insert the JWT token in the format: **Bearer {your_token}**"
     });
     
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
