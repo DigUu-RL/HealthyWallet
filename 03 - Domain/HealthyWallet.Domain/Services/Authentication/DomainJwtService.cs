@@ -155,7 +155,7 @@ public class DomainJwtService(
     /// <returns>The Redis key string.</returns>
     private string GetRefreshTokenKey(Guid userReferenceId)
     {
-        IConfigurationSection section = configuration.GetSection("Redis");
+        IConfigurationSection section = configuration.GetSection(nameof(StackExchange.Redis));
 
         string key = section.GetValue<string>("Key") ??
                      throw new EnvironmentKeyNotFoundException("Could not find redis key");
